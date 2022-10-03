@@ -25,13 +25,21 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    public boolean checkUsername(String username) {
+        AppUser existingUser = userRepo.findByUsername(username);
+        if (existingUser == null) {
+            return false;
+        } else return true;
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AppUser user = userRepo.findByUsername(username);
         if (user == null) {
-            log.error("User not found in the database");
+            log.info("User not found in the database");
             throw new UsernameNotFoundException("User not found in the database");
         } else {
-            log.error("User found in the database: {}", username);
+            log.info("User found in the database: {}", username);
         }
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
         user.getRoles().forEach(role -> {
@@ -42,6 +50,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public AppUser saveUser(AppUser user) {
+        AppUser existingUser = userRepo.findByUsername(user.getUsername());
+
         log.info("Saving new user {} to the database", user.getNickname());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepo.save(user);
@@ -54,6 +64,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             log.info("Saving new role {} to the database", role.getName());
             roleRepo.save(role);
         }
+    }
+
+    @Override
+    public Role getRole(String roleName) {
+        log.info("Fetching role {}", roleName);
+        return roleRepo.findByName(roleName);
     }
 
     @Override

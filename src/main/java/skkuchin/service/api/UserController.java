@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,6 +22,7 @@ import skkuchin.service.domain.Role;
 import skkuchin.service.repo.RoleRepo;
 import skkuchin.service.service.UserService;
 
+import javax.persistence.Column;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -36,9 +38,9 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
     private final UserService userService;
-    private final RoleRepo roleRepo;
 
     @GetMapping("/users")
     public ResponseEntity<List<AppUser>>getUsers() {
@@ -59,10 +61,16 @@ public class UserController {
                         .fromCurrentContextPath()
                         .path("/api/user/save").toUriString());
 
-        AppUser appUser = signUpForm.toEntity();
-        appUser.getRoles().add(roleRepo.findByName("ROLE_USER"));
-
-        return ResponseEntity.created(uri).body(userService.saveUser(appUser));
+        //모든 값 입력했는지 확인, username 중복 확인, 비밀번호 일치 여부 확인
+        if (signUpForm.isNotNull()
+                && !userService.checkUsername(signUpForm.getUsername())
+                && signUpForm.checkPassword()) {
+            AppUser appUser = signUpForm.toEntity();
+            appUser.getRoles().add(userService.getRole("ROLE_USER"));
+            return ResponseEntity.created(uri).body(userService.saveUser(appUser));
+        } else {
+            return ResponseEntity.created(uri).body(null);
+        }
     }
 
     /*
@@ -115,7 +123,7 @@ public class UserController {
                         .sign(algorithm);
                 Map<String, String> tokens = new HashMap<>();
                 tokens.put("access_token", access_token);
-                tokens.put("refresh_token", refresh_token);
+                //tokens.put("refresh_token", refresh_token);
                 response.setContentType(APPLICATION_JSON_VALUE);
                 new ObjectMapper().writeValue(response.getOutputStream(), tokens);
             } catch (Exception exception) {
@@ -162,6 +170,17 @@ class SignUpForm {
     private String nickname;
     private String username;
     private String password;
+    private String re_password;
+
+    public boolean isNotNull() {
+        if (!(this.nickname == null || this.username == null || this.password == null || this.re_password == null))
+            return true;
+        else return false;
+    }
+    public boolean checkPassword() {
+        if (this.password.equals(this.re_password)) return true;
+        else return false;
+    }
 
     public AppUser toEntity() {
         return AppUser
