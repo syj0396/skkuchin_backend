@@ -61,23 +61,13 @@ public class UserController {
                         .fromCurrentContextPath()
                         .path("/api/user/save").toUriString());
 
-        //모든 값 입력했는지 확인, username 중복 확인, 비밀번호 일치 여부 확인
-        if (signUpForm.isNotNull()
-                //&& !userService.checkUsername(signUpForm.getUsername())
-                && signUpForm.checkPassword()) {
-            AppUser appUser = signUpForm.toEntity();
-            appUser.getRoles().add(userService.getRole("ROLE_USER"));
-            return ResponseEntity.created(uri).body(userService.saveUser(appUser));
-        } else {
-            return ResponseEntity.created(uri).body(null);
+        //비밀번호 일치 여부 확인
+        if (!signUpForm.checkPassword()) {
+            throw new RuntimeException("re_password_error");
         }
-
-        /*
-        if (!signUpForm.isNotNull()) {
-            throw new RuntimeException("null value");
-        } else if (!signUpForm.checkPassword()) {
-            throw new RuntimeException("")
-        }*/
+        AppUser appUser = signUpForm.toEntity();
+        appUser.getRoles().add(userService.getRole("ROLE_USER"));
+        return ResponseEntity.created(uri).body(userService.saveUser(appUser));
     }
 
     /*
@@ -180,11 +170,6 @@ class SignUpForm {
     private String password;
     private String re_password;
 
-    public boolean isNotNull() {
-        if (!(this.nickname == null || this.username == null || this.password == null || this.re_password == null))
-            return true;
-        else return false;
-    }
     public boolean checkPassword() {
         if (this.password.equals(this.re_password)) return true;
         else return false;
