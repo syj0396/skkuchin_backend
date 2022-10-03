@@ -16,7 +16,9 @@ import static javax.persistence.GenerationType.AUTO;
 public class AppUser {
     @Id @GeneratedValue(strategy = AUTO)
     private Long id;
+    @Column(nullable = false)
     private String nickname;
+    @Column(unique = true)
     private String username;
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)

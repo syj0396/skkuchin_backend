@@ -63,7 +63,7 @@ public class UserController {
 
         //모든 값 입력했는지 확인, username 중복 확인, 비밀번호 일치 여부 확인
         if (signUpForm.isNotNull()
-                && !userService.checkUsername(signUpForm.getUsername())
+                //&& !userService.checkUsername(signUpForm.getUsername())
                 && signUpForm.checkPassword()) {
             AppUser appUser = signUpForm.toEntity();
             appUser.getRoles().add(userService.getRole("ROLE_USER"));
@@ -71,6 +71,13 @@ public class UserController {
         } else {
             return ResponseEntity.created(uri).body(null);
         }
+
+        /*
+        if (!signUpForm.isNotNull()) {
+            throw new RuntimeException("null value");
+        } else if (!signUpForm.checkPassword()) {
+            throw new RuntimeException("")
+        }*/
     }
 
     /*
@@ -167,6 +174,7 @@ class RoleToUser {
 
 @Data @Builder
 class SignUpForm {
+
     private String nickname;
     private String username;
     private String password;
